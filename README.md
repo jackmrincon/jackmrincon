@@ -1,0 +1,6 @@
+- 👋 Hi, I’m @jackmrincon
+- 👀 I’m interested in Proiject Management
+- 🌱 I’m currently learning how to use GitHub as a management tool.
+- 💞️ I’m looking to collaborate on eating the rich.
+- 📫 How to reach me: look for a bat signal in the night sky. 
+- 😄 Pronouns: He/Him

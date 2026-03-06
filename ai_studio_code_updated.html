@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UA COM BMI - Project Budget Simulations</title>
+  <title>UA COM BMI - Project Budget Summulations</title>
   <style>
     :root {
       --dai-coral: #f5826b;
@@ -69,7 +69,20 @@
     .btn-del { background: #fff1f0; color: var(--danger); padding: 4px 8px; }
     .btn:hover { opacity: 0.85; }
 
-    #save-status { font-size: 0.7rem; color: #059669; margin-left: auto; font-weight: bold; display: none; }
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 2px solid var(--dai-blue);
+      outline-offset: 2px;
+    }
+
+    #save-status {
+      font-size: 0.7rem;
+      color: #059669;
+      margin-left: auto;
+      font-weight: bold;
+      display: none;
+    }
 
     .muted { color: #94a3b8; font-weight: 600; font-size: 0.75rem; }
 
@@ -227,6 +240,14 @@
     }
 
     table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+    caption {
+      text-align: left;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 8px;
+      caption-side: top;
+    }
     th {
       text-align: left;
       font-size: 0.65rem;
@@ -282,9 +303,9 @@
 <body>
 <div class="container">
   <header class="lab-header">
-    <img src="logo.png" alt="Dai Lab" class="lab-logo" onerror="this.style.visibility='hidden'">
+    <img src="logo.png" alt="UA COM BMI" class="lab-logo" onerror="this.style.visibility='hidden'">
     <div class="lab-title">
-      <h1>Dai Lab Project Budget Simulator</h1>
+      <h1>UA COM BMI - Project Budget Summulations</h1>
       <p>Lab Management & Resource Tracking</p>
     </div>
     <div id="save-status">✓ Auto-saved</div>
@@ -395,6 +416,7 @@
   </div>
   <div class="card">
     <table id="incomeTable">
+      <caption>Funding sources and their overlap-adjusted contribution within the simulation window.</caption>
       <thead>
       <tr>
         <th width="30%">Description</th>
@@ -417,6 +439,7 @@
   </div>
   <div class="card">
     <table id="personnelTable">
+      <caption>Personnel costs pro-rated by overlap, effort, and fringe.</caption>
       <thead>
       <tr>
         <th width="18%">Name / Role</th>
@@ -441,6 +464,7 @@
   </div>
   <div class="card">
     <table id="otherTable">
+      <caption>Other operational expenses with optional MTDC inclusion.</caption>
       <thead>
       <tr>
         <th width="22%">Item Description</th>
@@ -461,12 +485,21 @@
 
 <script>
   let idCounter = 0;
-  const STORAGE_KEY = 'dai_lab_final_v5';
+  let suspendCalculate = false;
+  let saveStatusTimer = null;
+  const STORAGE_KEY = 'ua_com_bmi_final_v5';
 
   // ---------- Date helpers ----------
-  function isoToday() { return new Date().toISOString().split('T')[0]; }
-  function isoYearStart(y) { return new Date(y, 0, 1).toISOString().split('T')[0]; }
-  function isoYearEnd(y) { return new Date(y, 11, 31).toISOString().split('T')[0]; }
+  function formatLocalISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  function isoToday() { return formatLocalISO(new Date()); }
+  function isoYearStart(y) { return formatLocalISO(new Date(y, 0, 1)); }
+  function isoYearEnd(y) { return formatLocalISO(new Date(y, 11, 31)); }
 
   function safeDate(d) {
     const x = new Date(d);
@@ -497,7 +530,6 @@
   }
 
   function approxMonthsInWindow(simDays) {
-    // average days/month = 365.2425 / 12
     const avg = 365.2425 / 12;
     return simDays > 0 ? (simDays / avg) : 0;
   }
@@ -516,28 +548,27 @@
     if (type === 'income') {
       tr.innerHTML = `
         <td><input type="text" class="i-desc" value="${data?.desc ?? ''}" placeholder="Grant Name" oninput="calculate()"></td>
-        <td><input type="number" class="i-amt" value="${data?.amt ?? 100000}" oninput="calculate()"></td>
+        <td><input type="number" class="i-amt" value="${data?.amt ?? 100000}" min="0" step="0.01" oninput="calculate()"></td>
         <td><input type="date" class="i-start" value="${data?.start ?? today}" oninput="calculate()"></td>
         <td><input type="date" class="i-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
         <td><span class="days-badge i-days">0</span></td>
         <td class="total-col i-total">$0.00</td>
-        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+        <td><button class="btn btn-del" aria-label="Remove funding row" onclick="removeRow(${idCounter})">✕</button></td>
       `;
     } else if (type === 'personnel') {
       tr.innerHTML = `
         <td><input type="text" class="p-name" value="${data?.name ?? ''}" placeholder="Role" oninput="calculate()"></td>
-        <td><input type="number" class="p-amt" value="${data?.amt ?? 70000}" oninput="calculate()"></td>
+        <td><input type="number" class="p-amt" value="${data?.amt ?? 70000}" min="0" step="0.01" oninput="calculate()"></td>
         <td><input type="number" class="p-effort" value="${data?.effort ?? 100}" min="0" max="200" step="0.1" oninput="calculate()"></td>
         <td><input type="number" class="p-fringe" value="${data?.fringe ?? 30}" min="0" max="200" step="0.1" oninput="calculate()"></td>
         <td><input type="date" class="p-start" value="${data?.start ?? today}" oninput="calculate()"></td>
         <td><input type="date" class="p-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
         <td><span class="days-badge p-days">0</span></td>
         <td class="total-col p-total" style="color:var(--dai-coral)">$0.00</td>
-        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+        <td><button class="btn btn-del" aria-label="Remove personnel row" onclick="removeRow(${idCounter})">✕</button></td>
       `;
     } else if (type === 'other') {
       const cat = data?.cat ?? 'Other';
-      // Default MTDC: include except Equipment (common MTDC exclusion)
       const defaultMtdc = (cat === 'Equipment') ? false : true;
       const mtdcIncluded = (data?.mtdcIncluded !== undefined) ? !!data.mtdcIncluded : defaultMtdc;
 
@@ -553,7 +584,7 @@
             <option value="Other" ${cat === 'Other' ? 'selected' : ''}>Other</option>
           </select>
         </td>
-        <td><input type="number" class="o-amt" value="${data?.amt ?? 5000}" oninput="calculate()"></td>
+        <td><input type="number" class="o-amt" value="${data?.amt ?? 5000}" min="0" step="0.01" oninput="calculate()"></td>
         <td><input type="date" class="o-start" value="${data?.start ?? today}" oninput="calculate()"></td>
         <td><input type="date" class="o-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
         <td><span class="days-badge o-days">0</span></td>
@@ -561,19 +592,21 @@
           <input type="checkbox" class="o-mtdc" ${mtdcIncluded ? 'checked' : ''} onchange="calculate()">
         </td>
         <td class="total-col o-total" style="color:#64748b">$0.00</td>
-        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+        <td><button class="btn btn-del" aria-label="Remove other expense row" onclick="removeRow(${idCounter})">✕</button></td>
       `;
     }
 
     tbody.appendChild(tr);
-    calculate();
+
+    if (!suspendCalculate) {
+      calculate();
+    }
   }
 
   function syncOtherMtdcDefault(selectEl) {
-    // If user changes category, we do NOT forcibly overwrite MTDC choice.
-    // But for brand-new rows, the default sets Equipment unchecked; others checked.
-    // This function is intentionally conservative (no auto-flipping).
-    // You can later add a "reset MTDC to defaults" button if you want.
+    // Intentionally conservative:
+    // changing category does not overwrite the user's MTDC selection.
+    // Brand-new rows still receive defaults based on category.
   }
 
   function removeRow(id) {
@@ -588,7 +621,6 @@
     const simValid = !!(simStart && simEnd && simEnd >= simStart);
     setSimWarn(!simValid);
 
-    // If invalid window, zero everything to avoid misleading math
     if (!simValid) {
       setDashboardZeros();
       autoSave();
@@ -604,11 +636,10 @@
     let totalPersonnel = 0;
     let totalOther = 0;
 
-    // Track daily rates for charting (in-window logic)
     const incomeDailySegments = [];
     const costDailySegments = [];
 
-    // INCOME: pro-rate by overlap with simulation window
+    // INCOME
     document.querySelectorAll('.income-row').forEach(row => {
       const amt = parseFloat(row.querySelector('.i-amt').value) || 0;
       const gStart = safeDate(row.querySelector('.i-start').value);
@@ -622,7 +653,6 @@
         ovDays = overlapDays(gStart, gEnd, simStart, simEnd);
         inWindow = (grantDays > 0) ? amt * (ovDays / grantDays) : 0;
 
-        // For chart: income daily rate across grant, applied only where overlaps sim
         const daily = (grantDays > 0) ? (amt / grantDays) : 0;
         incomeDailySegments.push({ start: gStart, end: gEnd, daily });
       }
@@ -632,7 +662,7 @@
       row.querySelector('.i-total').innerText = formatCurrency(inWindow);
     });
 
-    // PERSONNEL: overlap with sim + effort + fringe
+    // PERSONNEL
     document.querySelectorAll('.personnel-row').forEach(row => {
       const salary = parseFloat(row.querySelector('.p-amt').value) || 0;
       const effortPct = (parseFloat(row.querySelector('.p-effort').value) || 0) / 100;
@@ -648,7 +678,6 @@
         const dailyBase = (salary / 365.25) * ovDays * effortPct;
         cost = dailyBase * (1 + fringe);
 
-        // For chart: daily cost rate during personnel active period (but window-limited when charting)
         const daily = (salary / 365.25) * effortPct * (1 + fringe);
         costDailySegments.push({ start: pStart, end: pEnd, daily });
       }
@@ -658,7 +687,7 @@
       row.querySelector('.p-total').innerText = formatCurrency(cost);
     });
 
-    // OTHER: overlap with sim + MTDC include toggle
+    // OTHER
     let mtdcOther = 0;
     document.querySelectorAll('.other-row').forEach(row => {
       const amt = parseFloat(row.querySelector('.o-amt').value) || 0;
@@ -685,17 +714,12 @@
     });
 
     const directCosts = totalPersonnel + totalOther;
-
-    // IDC calculation using MTDC base:
-    // - Personnel: included
-    // - Other: included if row checkbox checked
     const mtdcBase = totalPersonnel + mtdcOther;
 
     const idcEnabled = !!document.getElementById('idcEnabled').checked;
     const idcRate = (parseFloat(document.getElementById('idcRate').value) || 0) / 100;
     const idc = idcEnabled ? (mtdcBase * idcRate) : 0;
 
-    // For chart: spread IDC evenly across simulation window days (simple, stable assumption)
     if (idcEnabled && simDays > 0) {
       const daily = idc / simDays;
       costDailySegments.push({ start: simStart, end: simEnd, daily });
@@ -704,17 +728,14 @@
     const totalCosts = directCosts + idc;
     const balance = totalIncome - totalCosts;
 
-    // Burn + runway
     const burnPerMonth = (simMonths > 0) ? (totalCosts / simMonths) : 0;
     const runwayMonths = (burnPerMonth > 0) ? (balance / burnPerMonth) : Infinity;
 
-    // Dashboard
     document.getElementById('dispIncome').innerText = formatCurrency(totalIncome);
     document.getElementById('dispPers').innerText = formatCurrency(totalPersonnel);
     document.getElementById('dispOther').innerText = formatCurrency(totalOther);
     document.getElementById('dispIDC').innerText = formatCurrency(idc);
     document.getElementById('dispMTDC').innerText = `MTDC Base: ${formatCurrency(mtdcBase)}`;
-
     document.getElementById('dispBurn').innerText = formatCurrency(burnPerMonth);
 
     const runwayEl = document.getElementById('dispRunway');
@@ -725,7 +746,6 @@
     balEl.innerText = formatCurrency(balance);
     balEl.style.color = balance < 0 ? 'var(--danger)' : '#1e293b';
 
-    // Chart
     const chartPoints = buildMonthlySeries(simStart, simEnd, incomeDailySegments, costDailySegments);
     drawChart(chartPoints.labels, chartPoints.values);
     document.getElementById('chartNote').innerText =
@@ -752,11 +772,16 @@
   // ---------- Charting ----------
   function monthStart(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
   function monthEnd(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
-
   function addMonths(date, n) { return new Date(date.getFullYear(), date.getMonth() + n, 1); }
 
+  function formatCompactCurrency(n) {
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+    return formatCurrency(n).replace('.00', '');
+  }
+
   function buildMonthlySeries(simStart, simEnd, incomeSegs, costSegs) {
-    // Build month buckets covering the simulation window
     const startM = monthStart(simStart);
     const endM = monthStart(simEnd);
     const labels = [];
@@ -771,7 +796,6 @@
       return `${y}-${m}`;
     }
 
-    // helper: compute total for segments overlapped with [a,b]
     function segTotal(segs, a, b) {
       let sum = 0;
       for (const s of segs) {
@@ -784,13 +808,11 @@
       return sum;
     }
 
-    // iterate months
     let i = 0;
-    while (cur <= endM && i < 240) { // safety cap
+    while (cur <= endM && i < 240) {
       const mS = new Date(cur);
       const mE = monthEnd(cur);
 
-      // clamp to simulation window for this month slice
       const sliceS = new Date(Math.max(mS.getTime(), simStart.getTime()));
       const sliceE = new Date(Math.min(mE.getTime(), simEnd.getTime()));
       if (sliceE >= sliceS) {
@@ -814,10 +836,8 @@
     const W = canvas.width;
     const H = canvas.height;
 
-    // clear
     ctx.clearRect(0, 0, W, H);
 
-    // empty state
     if (!labels || labels.length === 0) {
       ctx.font = '16px -apple-system, Inter, sans-serif';
       ctx.fillStyle = '#94a3b8';
@@ -825,12 +845,10 @@
       return;
     }
 
-    // margins
     const padL = 60, padR = 20, padT = 20, padB = 40;
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
 
-    // ranges
     const minV = Math.min(...values, 0);
     const maxV = Math.max(...values, 0);
     const range = (maxV - minV) || 1;
@@ -838,7 +856,6 @@
     const xFor = (i) => padL + (i * (plotW / Math.max(1, labels.length - 1)));
     const yFor = (v) => padT + ((maxV - v) / range) * plotH;
 
-    // axes
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -847,7 +864,6 @@
     ctx.lineTo(padL + plotW, padT + plotH);
     ctx.stroke();
 
-    // zero line
     const yZero = yFor(0);
     ctx.strokeStyle = '#cbd5e1';
     ctx.setLineDash([4, 4]);
@@ -857,7 +873,6 @@
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // line
     ctx.strokeStyle = '#0f172a';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -869,7 +884,6 @@
     }
     ctx.stroke();
 
-    // points
     ctx.fillStyle = '#0f172a';
     for (let i = 0; i < values.length; i++) {
       const x = xFor(i);
@@ -879,7 +893,6 @@
       ctx.fill();
     }
 
-    // labels (sparse)
     ctx.fillStyle = '#64748b';
     ctx.font = '12px -apple-system, Inter, sans-serif';
     const step = Math.max(1, Math.floor(labels.length / 6));
@@ -887,12 +900,11 @@
       ctx.fillText(labels[i], xFor(i) - 18, padT + plotH + 24);
     }
 
-    // y-axis ticks
     const ticks = 4;
     for (let t = 0; t <= ticks; t++) {
       const v = minV + (t * (range / ticks));
       const y = yFor(v);
-      ctx.fillText(formatCurrency(v).replace('.00',''), 8, y + 4);
+      ctx.fillText(formatCompactCurrency(v), 8, y + 4);
       ctx.strokeStyle = '#f1f5f9';
       ctx.beginPath();
       ctx.moveTo(padL, y);
@@ -957,7 +969,11 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeData()));
       const st = document.getElementById('save-status');
       st.style.display = 'inline';
-      setTimeout(() => st.style.display = 'none', 1500);
+
+      clearTimeout(saveStatusTimer);
+      saveStatusTimer = setTimeout(() => {
+        st.style.display = 'none';
+      }, 1500);
     } catch (e) {
       console.warn('Auto-save failed:', e);
     }
@@ -985,20 +1001,24 @@
     document.getElementById('idcEnabled').checked = !!raw?.idc?.enabled;
     document.getElementById('idcRate').value = raw?.idc?.rate ?? '54';
 
-    if (!raw) {
-      addRow('income');
-      addRow('personnel');
-      addRow('other');
-      return;
-    }
-
     document.getElementById('incomeBody').innerHTML = '';
     document.getElementById('personnelBody').innerHTML = '';
     document.getElementById('otherBody').innerHTML = '';
 
-    raw.income?.forEach(d => addRow('income', d));
-    raw.personnel?.forEach(d => addRow('personnel', d));
-    raw.other?.forEach(d => addRow('other', d));
+    suspendCalculate = true;
+
+    if (!raw) {
+      addRow('income');
+      addRow('personnel');
+      addRow('other');
+    } else {
+      raw.income?.forEach(d => addRow('income', d));
+      raw.personnel?.forEach(d => addRow('personnel', d));
+      raw.other?.forEach(d => addRow('other', d));
+    }
+
+    suspendCalculate = false;
+    calculate();
   }
 
   function exportData() {
@@ -1006,7 +1026,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `DaiLab_Budget_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `UA_COM_BMI_Budget_${isoToday()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -1020,7 +1040,6 @@
       try {
         const parsed = JSON.parse(ev.target.result);
         loadData(parsed);
-        calculate();
       } catch (err) {
         alert("That file doesn't look like valid JSON for this simulator.");
         console.error(err);
@@ -1033,15 +1052,18 @@
   function clearData() {
     if (confirm("Erase all simulator data?")) {
       localStorage.removeItem(STORAGE_KEY);
-      location.reload();
+      loadData(null);
     }
   }
 
   function formatCurrency(n) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(n);
   }
 
-  window.onload = () => loadData();
+  window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>

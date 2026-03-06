@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dai Lab - Project Budget Simulator</title>
+  <style>
+    :root {
+      --dai-coral: #f5826b;
+      --dai-blue: #89d2f2;
+      --primary: var(--dai-coral);
+      --secondary: var(--dai-blue);
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #1e293b;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; }
+
+    /* Branding Header */
+    .lab-header {
+      display: flex;
+      align-items: center;
+      gap: 25px;
+      margin-bottom: 18px;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .lab-logo { height: 80px; width: auto; }
+    .lab-title h1 { margin: 0; font-size: 1.6rem; color: #334155; }
+    .lab-title p {
+      margin: 3px 0 0 0;
+      color: var(--dai-coral);
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+
+    /* Toolbar */
+    .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+
+    .btn {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.75rem;
+      transition: all 0.2s;
+    }
+
+    .btn-add-pers { background: var(--dai-coral); color: white; }
+    .btn-add-other { background: #64748b; color: white; }
+    .btn-add-income { background: var(--dai-blue); color: white; }
+    .btn-util { background: white; border: 1px solid #e2e8f0; color: #64748b; }
+    .btn-del { background: #fff1f0; color: var(--danger); padding: 4px 8px; }
+    .btn:hover { opacity: 0.85; }
+
+    #save-status { font-size: 0.7rem; color: #059669; margin-left: auto; font-weight: bold; display: none; }
+
+    .muted { color: #94a3b8; font-weight: 600; font-size: 0.75rem; }
+
+    /* Controls rows */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      padding: 12px 14px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px 0;
+      font-size: 0.85rem;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel h3::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: var(--dai-coral);
+      border-radius: 2px;
+    }
+
+    .field-row {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 220px;
+    }
+
+    .field label {
+      font-size: 0.65rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+    }
+
+    input, select {
+      padding: 6px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      width: 100%;
+      font-size: 0.85rem;
+      box-sizing: border-box;
+    }
+
+    .inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 240px;
+    }
+
+    .inline .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    .inline input[type="checkbox"] { width: auto; }
+
+    .warn-badge {
+      background: #fff7ed;
+      color: #c2410c;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      display: none;
+    }
+
+    /* Dashboard */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      border-top: 5px solid #e2e8f0;
+    }
+
+    .stat-card.income { border-color: var(--dai-blue); }
+    .stat-card.pers { border-color: var(--dai-coral); }
+    .stat-card.other { border-color: #94a3b8; }
+    .stat-card.idc { border-color: #0ea5e9; }
+    .stat-card.burn { border-color: #8b5cf6; }
+    .stat-card.runway { border-color: #22c55e; }
+    .stat-card.balance { border-color: #1e293b; }
+
+    .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+    .stat-value { font-size: 1.35rem; font-weight: 900; margin-top: 6px; }
+
+    /* Tables & Sections */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 26px 0 10px 0;
+    }
+
+    h2 {
+      font-size: 1rem;
+      color: #475569;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: var(--dai-coral);
+      border-radius: 2px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      overflow-x: auto;
+    }
+
+    table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+    th {
+      text-align: left;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      padding: 10px;
+      border-bottom: 1px solid #f1f5f9;
+      text-transform: uppercase;
+    }
+    td { padding: 8px 10px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+
+    .total-col { font-weight: 800; font-size: 0.9rem; }
+    .days-badge {
+      background: #f1f5f9;
+      color: #64748b;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 900;
+      display: inline-block;
+      min-width: 42px;
+      text-align: center;
+    }
+
+    .mini {
+      font-size: 0.72rem;
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    .chart-wrap {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    canvas {
+      width: 100%;
+      max-width: 100%;
+      height: 220px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    @media (max-width: 980px) {
+      .controls-grid { grid-template-columns: 1fr; }
+      table { min-width: 1050px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <header class="lab-header">
+    <img src="logo.png" alt="Dai Lab" class="lab-logo" onerror="this.style.visibility='hidden'">
+    <div class="lab-title">
+      <h1>Dai Lab Project Budget Simulator</h1>
+      <p>Lab Management & Resource Tracking</p>
+    </div>
+    <div id="save-status">✓ Auto-saved</div>
+  </header>
+
+  <div class="toolbar">
+    <button class="btn btn-util" onclick="exportData()">💾 Export JSON</button>
+    <button class="btn btn-util" onclick="document.getElementById('importFile').click()">📂 Import JSON</button>
+    <button class="btn btn-util" onclick="clearData()">🗑️ Reset All</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+    <span class="muted">Totals reflect overlap with the Simulation Window.</span>
+  </div>
+
+  <div class="controls-grid">
+    <!-- Simulation Window -->
+    <div class="panel">
+      <h3>Simulation Window</h3>
+      <div class="field-row">
+        <div class="field">
+          <label for="simStart">Simulation Start</label>
+          <input type="date" id="simStart" oninput="calculate()">
+        </div>
+        <div class="field">
+          <label for="simEnd">Simulation End</label>
+          <input type="date" id="simEnd" oninput="calculate()">
+        </div>
+        <div class="field" style="min-width: 140px;">
+          <label>&nbsp;</label>
+          <div><span class="warn-badge" id="simWarn">Fix dates</span></div>
+        </div>
+      </div>
+      <div class="mini" style="margin-top:10px;">
+        Burn rate and chart assume costs/funding are evenly distributed across active days.
+      </div>
+    </div>
+
+    <!-- IDC / F&A -->
+    <div class="panel">
+      <h3>Indirect Costs (F&amp;A / IDC)</h3>
+      <div class="field-row">
+        <div class="inline">
+          <div class="check">
+            <input type="checkbox" id="idcEnabled" onchange="calculate()">
+            <label for="idcEnabled" style="margin:0; font-size:0.78rem; font-weight:900; color:#334155; text-transform:none; letter-spacing:0;">
+              Enable IDC
+            </label>
+          </div>
+        </div>
+        <div class="field" style="min-width: 220px;">
+          <label for="idcRate">IDC Rate (%)</label>
+          <input type="number" id="idcRate" value="54" min="0" max="200" step="0.01" oninput="calculate()">
+        </div>
+        <div class="field" style="min-width: 280px;">
+          <label>MTDC Rule</label>
+          <div class="mini">Per-row “MTDC Included?” controls the base. Personnel is MTDC-included by default.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="dashboard">
+    <div class="stat-card income">
+      <div class="stat-label">Total Funding (In Window)</div>
+      <div class="stat-value" id="dispIncome">$0.00</div>
+    </div>
+    <div class="stat-card pers">
+      <div class="stat-label">Personnel (In Window)</div>
+      <div class="stat-value" id="dispPers">$0.00</div>
+    </div>
+    <div class="stat-card other">
+      <div class="stat-label">Other Direct (In Window)</div>
+      <div class="stat-value" id="dispOther">$0.00</div>
+    </div>
+    <div class="stat-card idc">
+      <div class="stat-label">IDC (In Window)</div>
+      <div class="stat-value" id="dispIDC">$0.00</div>
+      <div class="mini" id="dispMTDC">MTDC Base: $0.00</div>
+    </div>
+    <div class="stat-card burn">
+      <div class="stat-label">Burn Rate (Per Month)</div>
+      <div class="stat-value" id="dispBurn">$0.00</div>
+      <div class="mini" id="dispMonths">Window Months: 0</div>
+    </div>
+    <div class="stat-card runway">
+      <div class="stat-label">Runway (Months)</div>
+      <div class="stat-value" id="dispRunway">—</div>
+      <div class="mini">Based on remaining balance / burn</div>
+    </div>
+    <div class="stat-card balance">
+      <div class="stat-label">Free Balance (After IDC)</div>
+      <div class="stat-value" id="dispBal">$0.00</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Balance Over Time</h3>
+    <div class="chart-wrap">
+      <canvas id="balChart" width="1200" height="220"></canvas>
+      <div class="mini" id="chartNote"></div>
+    </div>
+  </div>
+
+  <!-- INCOME -->
+  <div class="section-header">
+    <h2>1. Funding Sources</h2>
+    <button class="btn btn-add-income" onclick="addRow('income')">+ Add Funding</button>
+  </div>
+  <div class="card">
+    <table id="incomeTable">
+      <thead>
+      <tr>
+        <th width="30%">Description</th>
+        <th width="16%">Total Amount ($)</th>
+        <th width="14%">Start Date</th>
+        <th width="14%">End Date</th>
+        <th width="8%">Overlap Days</th>
+        <th width="13%">In-Window Funding</th>
+        <th width="5%"></th>
+      </tr>
+      </thead>
+      <tbody id="incomeBody"></tbody>
+    </table>
+  </div>
+
+  <!-- PERSONNEL -->
+  <div class="section-header">
+    <h2>2. Personnel (Pro-Rated)</h2>
+    <button class="btn btn-add-pers" onclick="addRow('personnel')">+ Add Member</button>
+  </div>
+  <div class="card">
+    <table id="personnelTable">
+      <thead>
+      <tr>
+        <th width="18%">Name / Role</th>
+        <th width="13%">Annual Salary ($)</th>
+        <th width="10%">Effort (%)</th>
+        <th width="10%">Fringe (%)</th>
+        <th width="14%">Start Date</th>
+        <th width="14%">End Date</th>
+        <th width="8%">Overlap Days</th>
+        <th width="8%">Cost</th>
+        <th width="5%"></th>
+      </tr>
+      </thead>
+      <tbody id="personnelBody"></tbody>
+    </table>
+  </div>
+
+  <!-- OTHER EXPENSES -->
+  <div class="section-header">
+    <h2>3. Other Expenses (Pro-Rated Operational Costs)</h2>
+    <button class="btn btn-add-other" onclick="addRow('other')">+ Add Expense Item</button>
+  </div>
+  <div class="card">
+    <table id="otherTable">
+      <thead>
+      <tr>
+        <th width="22%">Item Description</th>
+        <th width="14%">Category</th>
+        <th width="14%">Annual/Lump Rate ($)</th>
+        <th width="11%">Start Date</th>
+        <th width="11%">End Date</th>
+        <th width="8%">Overlap Days</th>
+        <th width="8%">MTDC Included?</th>
+        <th width="9%">Total Cost</th>
+        <th width="3%"></th>
+      </tr>
+      </thead>
+      <tbody id="otherBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let idCounter = 0;
+  const STORAGE_KEY = 'dai_lab_final_v5';
+
+  // ---------- Date helpers ----------
+  function isoToday() { return new Date().toISOString().split('T')[0]; }
+  function isoYearStart(y) { return new Date(y, 0, 1).toISOString().split('T')[0]; }
+  function isoYearEnd(y) { return new Date(y, 11, 31).toISOString().split('T')[0]; }
+
+  function safeDate(d) {
+    const x = new Date(d);
+    return isNaN(x.getTime()) ? null : x;
+  }
+
+  function daysInclusive(start, end) {
+    const ms = 1000 * 60 * 60 * 24;
+    return Math.floor((end - start) / ms) + 1;
+  }
+
+  function overlapDays(aStart, aEnd, bStart, bEnd) {
+    const s = new Date(Math.max(aStart.getTime(), bStart.getTime()));
+    const e = new Date(Math.min(aEnd.getTime(), bEnd.getTime()));
+    if (e < s) return 0;
+    return daysInclusive(s, e);
+  }
+
+  function getSimWindow() {
+    const s = safeDate(document.getElementById('simStart').value);
+    const e = safeDate(document.getElementById('simEnd').value);
+    return { s, e };
+  }
+
+  function setSimWarn(show) {
+    const el = document.getElementById('simWarn');
+    el.style.display = show ? 'inline-block' : 'none';
+  }
+
+  function approxMonthsInWindow(simDays) {
+    // average days/month = 365.2425 / 12
+    const avg = 365.2425 / 12;
+    return simDays > 0 ? (simDays / avg) : 0;
+  }
+
+  // ---------- UI row builder ----------
+  function addRow(type, data = null) {
+    idCounter++;
+    const tbody = document.getElementById(type + 'Body');
+    const tr = document.createElement('tr');
+    tr.id = `row-${idCounter}`;
+    tr.className = `${type}-row`;
+
+    const today = isoToday();
+    const endYear = isoYearEnd(new Date().getFullYear());
+
+    if (type === 'income') {
+      tr.innerHTML = `
+        <td><input type="text" class="i-desc" value="${data?.desc ?? ''}" placeholder="Grant Name" oninput="calculate()"></td>
+        <td><input type="number" class="i-amt" value="${data?.amt ?? 100000}" oninput="calculate()"></td>
+        <td><input type="date" class="i-start" value="${data?.start ?? today}" oninput="calculate()"></td>
+        <td><input type="date" class="i-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><span class="days-badge i-days">0</span></td>
+        <td class="total-col i-total">$0.00</td>
+        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+      `;
+    } else if (type === 'personnel') {
+      tr.innerHTML = `
+        <td><input type="text" class="p-name" value="${data?.name ?? ''}" placeholder="Role" oninput="calculate()"></td>
+        <td><input type="number" class="p-amt" value="${data?.amt ?? 70000}" oninput="calculate()"></td>
+        <td><input type="number" class="p-effort" value="${data?.effort ?? 100}" min="0" max="200" step="0.1" oninput="calculate()"></td>
+        <td><input type="number" class="p-fringe" value="${data?.fringe ?? 30}" min="0" max="200" step="0.1" oninput="calculate()"></td>
+        <td><input type="date" class="p-start" value="${data?.start ?? today}" oninput="calculate()"></td>
+        <td><input type="date" class="p-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><span class="days-badge p-days">0</span></td>
+        <td class="total-col p-total" style="color:var(--dai-coral)">$0.00</td>
+        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+      `;
+    } else if (type === 'other') {
+      const cat = data?.cat ?? 'Other';
+      // Default MTDC: include except Equipment (common MTDC exclusion)
+      const defaultMtdc = (cat === 'Equipment') ? false : true;
+      const mtdcIncluded = (data?.mtdcIncluded !== undefined) ? !!data.mtdcIncluded : defaultMtdc;
+
+      tr.innerHTML = `
+        <td><input type="text" class="o-desc" value="${data?.desc ?? ''}" placeholder="e.g. Mouse Housing" oninput="calculate()"></td>
+        <td>
+          <select class="o-cat" onchange="syncOtherMtdcDefault(this); calculate()">
+            <option value="Animal Cost" ${cat === 'Animal Cost' ? 'selected' : ''}>Animal Cost</option>
+            <option value="Equipment" ${cat === 'Equipment' ? 'selected' : ''}>Equipment</option>
+            <option value="Supplies" ${cat === 'Supplies' ? 'selected' : ''}>Supplies</option>
+            <option value="Travel" ${cat === 'Travel' ? 'selected' : ''}>Travel</option>
+            <option value="Publication" ${cat === 'Publication' ? 'selected' : ''}>Publication</option>
+            <option value="Other" ${cat === 'Other' ? 'selected' : ''}>Other</option>
+          </select>
+        </td>
+        <td><input type="number" class="o-amt" value="${data?.amt ?? 5000}" oninput="calculate()"></td>
+        <td><input type="date" class="o-start" value="${data?.start ?? today}" oninput="calculate()"></td>
+        <td><input type="date" class="o-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><span class="days-badge o-days">0</span></td>
+        <td style="text-align:center;">
+          <input type="checkbox" class="o-mtdc" ${mtdcIncluded ? 'checked' : ''} onchange="calculate()">
+        </td>
+        <td class="total-col o-total" style="color:#64748b">$0.00</td>
+        <td><button class="btn btn-del" onclick="removeRow(${idCounter})">✕</button></td>
+      `;
+    }
+
+    tbody.appendChild(tr);
+    calculate();
+  }
+
+  function syncOtherMtdcDefault(selectEl) {
+    // If user changes category, we do NOT forcibly overwrite MTDC choice.
+    // But for brand-new rows, the default sets Equipment unchecked; others checked.
+    // This function is intentionally conservative (no auto-flipping).
+    // You can later add a "reset MTDC to defaults" button if you want.
+  }
+
+  function removeRow(id) {
+    const el = document.getElementById(`row-${id}`);
+    if (el) el.remove();
+    calculate();
+  }
+
+  // ---------- Core computation ----------
+  function calculate() {
+    const { s: simStart, e: simEnd } = getSimWindow();
+    const simValid = !!(simStart && simEnd && simEnd >= simStart);
+    setSimWarn(!simValid);
+
+    // If invalid window, zero everything to avoid misleading math
+    if (!simValid) {
+      setDashboardZeros();
+      autoSave();
+      drawChart([], []);
+      return;
+    }
+
+    const simDays = daysInclusive(simStart, simEnd);
+    const simMonths = approxMonthsInWindow(simDays);
+    document.getElementById('dispMonths').innerText = `Window Months: ${simMonths.toFixed(2)}`;
+
+    let totalIncome = 0;
+    let totalPersonnel = 0;
+    let totalOther = 0;
+
+    // Track daily rates for charting (in-window logic)
+    const incomeDailySegments = [];
+    const costDailySegments = [];
+
+    // INCOME: pro-rate by overlap with simulation window
+    document.querySelectorAll('.income-row').forEach(row => {
+      const amt = parseFloat(row.querySelector('.i-amt').value) || 0;
+      const gStart = safeDate(row.querySelector('.i-start').value);
+      const gEnd = safeDate(row.querySelector('.i-end').value);
+
+      let inWindow = 0;
+      let ovDays = 0;
+
+      if (gStart && gEnd && gEnd >= gStart) {
+        const grantDays = daysInclusive(gStart, gEnd);
+        ovDays = overlapDays(gStart, gEnd, simStart, simEnd);
+        inWindow = (grantDays > 0) ? amt * (ovDays / grantDays) : 0;
+
+        // For chart: income daily rate across grant, applied only where overlaps sim
+        const daily = (grantDays > 0) ? (amt / grantDays) : 0;
+        incomeDailySegments.push({ start: gStart, end: gEnd, daily });
+      }
+
+      totalIncome += inWindow;
+      row.querySelector('.i-days').innerText = ovDays;
+      row.querySelector('.i-total').innerText = formatCurrency(inWindow);
+    });
+
+    // PERSONNEL: overlap with sim + effort + fringe
+    document.querySelectorAll('.personnel-row').forEach(row => {
+      const salary = parseFloat(row.querySelector('.p-amt').value) || 0;
+      const effortPct = (parseFloat(row.querySelector('.p-effort').value) || 0) / 100;
+      const fringe = (parseFloat(row.querySelector('.p-fringe').value) || 0) / 100;
+      const pStart = safeDate(row.querySelector('.p-start').value);
+      const pEnd = safeDate(row.querySelector('.p-end').value);
+
+      let cost = 0;
+      let ovDays = 0;
+
+      if (pStart && pEnd && pEnd >= pStart) {
+        ovDays = overlapDays(pStart, pEnd, simStart, simEnd);
+        const dailyBase = (salary / 365.25) * ovDays * effortPct;
+        cost = dailyBase * (1 + fringe);
+
+        // For chart: daily cost rate during personnel active period (but window-limited when charting)
+        const daily = (salary / 365.25) * effortPct * (1 + fringe);
+        costDailySegments.push({ start: pStart, end: pEnd, daily });
+      }
+
+      totalPersonnel += cost;
+      row.querySelector('.p-days').innerText = ovDays;
+      row.querySelector('.p-total').innerText = formatCurrency(cost);
+    });
+
+    // OTHER: overlap with sim + MTDC include toggle
+    let mtdcOther = 0;
+    document.querySelectorAll('.other-row').forEach(row => {
+      const amt = parseFloat(row.querySelector('.o-amt').value) || 0;
+      const oStart = safeDate(row.querySelector('.o-start').value);
+      const oEnd = safeDate(row.querySelector('.o-end').value);
+      const mtdcIncluded = !!row.querySelector('.o-mtdc')?.checked;
+
+      let cost = 0;
+      let ovDays = 0;
+
+      if (oStart && oEnd && oEnd >= oStart) {
+        ovDays = overlapDays(oStart, oEnd, simStart, simEnd);
+        cost = (amt / 365.25) * ovDays;
+
+        const daily = (amt / 365.25);
+        costDailySegments.push({ start: oStart, end: oEnd, daily });
+      }
+
+      totalOther += cost;
+      if (mtdcIncluded) mtdcOther += cost;
+
+      row.querySelector('.o-days').innerText = ovDays;
+      row.querySelector('.o-total').innerText = formatCurrency(cost);
+    });
+
+    const directCosts = totalPersonnel + totalOther;
+
+    // IDC calculation using MTDC base:
+    // - Personnel: included
+    // - Other: included if row checkbox checked
+    const mtdcBase = totalPersonnel + mtdcOther;
+
+    const idcEnabled = !!document.getElementById('idcEnabled').checked;
+    const idcRate = (parseFloat(document.getElementById('idcRate').value) || 0) / 100;
+    const idc = idcEnabled ? (mtdcBase * idcRate) : 0;
+
+    // For chart: spread IDC evenly across simulation window days (simple, stable assumption)
+    if (idcEnabled && simDays > 0) {
+      const daily = idc / simDays;
+      costDailySegments.push({ start: simStart, end: simEnd, daily });
+    }
+
+    const totalCosts = directCosts + idc;
+    const balance = totalIncome - totalCosts;
+
+    // Burn + runway
+    const burnPerMonth = (simMonths > 0) ? (totalCosts / simMonths) : 0;
+    const runwayMonths = (burnPerMonth > 0) ? (balance / burnPerMonth) : Infinity;
+
+    // Dashboard
+    document.getElementById('dispIncome').innerText = formatCurrency(totalIncome);
+    document.getElementById('dispPers').innerText = formatCurrency(totalPersonnel);
+    document.getElementById('dispOther').innerText = formatCurrency(totalOther);
+    document.getElementById('dispIDC').innerText = formatCurrency(idc);
+    document.getElementById('dispMTDC').innerText = `MTDC Base: ${formatCurrency(mtdcBase)}`;
+
+    document.getElementById('dispBurn').innerText = formatCurrency(burnPerMonth);
+
+    const runwayEl = document.getElementById('dispRunway');
+    if (!isFinite(runwayMonths)) runwayEl.innerText = '—';
+    else runwayEl.innerText = `${runwayMonths.toFixed(1)}`;
+
+    const balEl = document.getElementById('dispBal');
+    balEl.innerText = formatCurrency(balance);
+    balEl.style.color = balance < 0 ? 'var(--danger)' : '#1e293b';
+
+    // Chart
+    const chartPoints = buildMonthlySeries(simStart, simEnd, incomeDailySegments, costDailySegments);
+    drawChart(chartPoints.labels, chartPoints.values);
+    document.getElementById('chartNote').innerText =
+      `Chart is monthly cumulative balance within the Simulation Window.`;
+
+    autoSave();
+  }
+
+  function setDashboardZeros() {
+    document.getElementById('dispIncome').innerText = formatCurrency(0);
+    document.getElementById('dispPers').innerText = formatCurrency(0);
+    document.getElementById('dispOther').innerText = formatCurrency(0);
+    document.getElementById('dispIDC').innerText = formatCurrency(0);
+    document.getElementById('dispMTDC').innerText = `MTDC Base: ${formatCurrency(0)}`;
+    document.getElementById('dispBurn').innerText = formatCurrency(0);
+    document.getElementById('dispMonths').innerText = `Window Months: 0`;
+    document.getElementById('dispRunway').innerText = '—';
+    const balEl = document.getElementById('dispBal');
+    balEl.innerText = formatCurrency(0);
+    balEl.style.color = '#1e293b';
+    document.getElementById('chartNote').innerText = '';
+  }
+
+  // ---------- Charting ----------
+  function monthStart(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function monthEnd(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
+
+  function addMonths(date, n) { return new Date(date.getFullYear(), date.getMonth() + n, 1); }
+
+  function buildMonthlySeries(simStart, simEnd, incomeSegs, costSegs) {
+    // Build month buckets covering the simulation window
+    const startM = monthStart(simStart);
+    const endM = monthStart(simEnd);
+    const labels = [];
+    const values = [];
+
+    let cur = new Date(startM);
+    let cumulative = 0;
+
+    function fmtLabel(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      return `${y}-${m}`;
+    }
+
+    // helper: compute total for segments overlapped with [a,b]
+    function segTotal(segs, a, b) {
+      let sum = 0;
+      for (const s of segs) {
+        const sStart = s.start;
+        const sEnd = s.end;
+        if (!(sStart && sEnd && sEnd >= sStart)) continue;
+        const ov = overlapDays(sStart, sEnd, a, b);
+        if (ov > 0) sum += ov * (s.daily || 0);
+      }
+      return sum;
+    }
+
+    // iterate months
+    let i = 0;
+    while (cur <= endM && i < 240) { // safety cap
+      const mS = new Date(cur);
+      const mE = monthEnd(cur);
+
+      // clamp to simulation window for this month slice
+      const sliceS = new Date(Math.max(mS.getTime(), simStart.getTime()));
+      const sliceE = new Date(Math.min(mE.getTime(), simEnd.getTime()));
+      if (sliceE >= sliceS) {
+        const inc = segTotal(incomeSegs, sliceS, sliceE);
+        const cost = segTotal(costSegs, sliceS, sliceE);
+        cumulative += (inc - cost);
+        labels.push(fmtLabel(cur));
+        values.push(cumulative);
+      }
+
+      cur = addMonths(cur, 1);
+      i++;
+    }
+
+    return { labels, values };
+  }
+
+  function drawChart(labels, values) {
+    const canvas = document.getElementById('balChart');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // clear
+    ctx.clearRect(0, 0, W, H);
+
+    // empty state
+    if (!labels || labels.length === 0) {
+      ctx.font = '16px -apple-system, Inter, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('Set a valid Simulation Window to view the chart.', 20, 40);
+      return;
+    }
+
+    // margins
+    const padL = 60, padR = 20, padT = 20, padB = 40;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    // ranges
+    const minV = Math.min(...values, 0);
+    const maxV = Math.max(...values, 0);
+    const range = (maxV - minV) || 1;
+
+    const xFor = (i) => padL + (i * (plotW / Math.max(1, labels.length - 1)));
+    const yFor = (v) => padT + ((maxV - v) / range) * plotH;
+
+    // axes
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, padT);
+    ctx.lineTo(padL, padT + plotH);
+    ctx.lineTo(padL + plotW, padT + plotH);
+    ctx.stroke();
+
+    // zero line
+    const yZero = yFor(0);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padL, yZero);
+    ctx.lineTo(padL + plotW, yZero);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // line
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+      const x = xFor(i);
+      const y = yFor(values[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // points
+    ctx.fillStyle = '#0f172a';
+    for (let i = 0; i < values.length; i++) {
+      const x = xFor(i);
+      const y = yFor(values[i]);
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // labels (sparse)
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px -apple-system, Inter, sans-serif';
+    const step = Math.max(1, Math.floor(labels.length / 6));
+    for (let i = 0; i < labels.length; i += step) {
+      ctx.fillText(labels[i], xFor(i) - 18, padT + plotH + 24);
+    }
+
+    // y-axis ticks
+    const ticks = 4;
+    for (let t = 0; t <= ticks; t++) {
+      const v = minV + (t * (range / ticks));
+      const y = yFor(v);
+      ctx.fillText(formatCurrency(v).replace('.00',''), 8, y + 4);
+      ctx.strokeStyle = '#f1f5f9';
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + plotW, y);
+      ctx.stroke();
+    }
+  }
+
+  // ---------- Persistence ----------
+  function serializeData() {
+    const data = {
+      version: 5,
+      sim: {
+        start: document.getElementById('simStart').value,
+        end: document.getElementById('simEnd').value
+      },
+      idc: {
+        enabled: !!document.getElementById('idcEnabled').checked,
+        rate: document.getElementById('idcRate').value
+      },
+      income: [],
+      personnel: [],
+      other: []
+    };
+
+    document.querySelectorAll('.income-row').forEach(row => {
+      data.income.push({
+        desc: row.querySelector('.i-desc').value,
+        amt: row.querySelector('.i-amt').value,
+        start: row.querySelector('.i-start').value,
+        end: row.querySelector('.i-end').value
+      });
+    });
+
+    document.querySelectorAll('.personnel-row').forEach(row => {
+      data.personnel.push({
+        name: row.querySelector('.p-name').value,
+        amt: row.querySelector('.p-amt').value,
+        effort: row.querySelector('.p-effort').value,
+        fringe: row.querySelector('.p-fringe').value,
+        start: row.querySelector('.p-start').value,
+        end: row.querySelector('.p-end').value
+      });
+    });
+
+    document.querySelectorAll('.other-row').forEach(row => {
+      data.other.push({
+        desc: row.querySelector('.o-desc').value,
+        cat: row.querySelector('.o-cat').value,
+        amt: row.querySelector('.o-amt').value,
+        start: row.querySelector('.o-start').value,
+        end: row.querySelector('.o-end').value,
+        mtdcIncluded: !!row.querySelector('.o-mtdc')?.checked
+      });
+    });
+
+    return data;
+  }
+
+  function autoSave() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeData()));
+      const st = document.getElementById('save-status');
+      st.style.display = 'inline';
+      setTimeout(() => st.style.display = 'none', 1500);
+    } catch (e) {
+      console.warn('Auto-save failed:', e);
+    }
+  }
+
+  function loadData(source = null) {
+    let raw = null;
+
+    if (source) {
+      raw = source;
+    } else {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        raw = stored ? JSON.parse(stored) : null;
+      } catch (e) {
+        console.warn('Stored data corrupted; starting fresh.', e);
+        raw = null;
+      }
+    }
+
+    const y = new Date().getFullYear();
+    document.getElementById('simStart').value = raw?.sim?.start || isoYearStart(y);
+    document.getElementById('simEnd').value = raw?.sim?.end || isoYearEnd(y);
+
+    document.getElementById('idcEnabled').checked = !!raw?.idc?.enabled;
+    document.getElementById('idcRate').value = raw?.idc?.rate ?? '54';
+
+    if (!raw) {
+      addRow('income');
+      addRow('personnel');
+      addRow('other');
+      return;
+    }
+
+    document.getElementById('incomeBody').innerHTML = '';
+    document.getElementById('personnelBody').innerHTML = '';
+    document.getElementById('otherBody').innerHTML = '';
+
+    raw.income?.forEach(d => addRow('income', d));
+    raw.personnel?.forEach(d => addRow('personnel', d));
+    raw.other?.forEach(d => addRow('other', d));
+  }
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(serializeData(), null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DaiLab_Budget_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(e) {
+    const file = e?.target?.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        loadData(parsed);
+        calculate();
+      } catch (err) {
+        alert("That file doesn't look like valid JSON for this simulator.");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  function clearData() {
+    if (confirm("Erase all simulator data?")) {
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+  }
+
+  function formatCurrency(n) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  }
+
+  window.onload = () => loadData();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UA COM BMI - Project Budget Simmulations</title>
+  <title>UA COM BMI - Project Budget Summulations</title>
   <style>
     :root {
       --dai-coral: #f5826b;
@@ -11,9 +11,13 @@
       --primary: var(--dai-coral);
       --secondary: var(--dai-blue);
       --danger: #ef4444;
+      --warn: #f59e0b;
       --bg: #f8fafc;
       --card: #ffffff;
       --text: #1e293b;
+      --line: #e2e8f0;
+      --invalid-bg: #fff7ed;
+      --invalid-border: #fdba74;
     }
 
     body {
@@ -26,7 +30,6 @@
 
     .container { max-width: 1400px; margin: 0 auto; }
 
-    /* Branding Header */
     .lab-header {
       display: flex;
       align-items: center;
@@ -49,8 +52,13 @@
       letter-spacing: 1px;
     }
 
-    /* Toolbar */
-    .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
     .btn {
       padding: 8px 14px;
@@ -65,9 +73,11 @@
     .btn-add-pers { background: var(--dai-coral); color: white; }
     .btn-add-other { background: #64748b; color: white; }
     .btn-add-income { background: var(--dai-blue); color: white; }
-    .btn-util { background: white; border: 1px solid #e2e8f0; color: #64748b; }
+    .btn-util { background: white; border: 1px solid var(--line); color: #64748b; }
     .btn-del { background: #fff1f0; color: var(--danger); padding: 4px 8px; }
-    .btn:hover { opacity: 0.85; }
+    .btn-dup { background: #eff6ff; color: #1d4ed8; padding: 4px 8px; }
+
+    .btn:hover { opacity: 0.88; }
 
     .btn:focus-visible,
     input:focus-visible,
@@ -86,7 +96,6 @@
 
     .muted { color: #94a3b8; font-weight: 600; font-size: 0.75rem; }
 
-    /* Controls rows */
     .controls-grid {
       display: grid;
       grid-template-columns: 1.2fr 1fr;
@@ -143,7 +152,7 @@
 
     input, select {
       padding: 6px 10px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--line);
       border-radius: 6px;
       width: 100%;
       font-size: 0.85rem;
@@ -162,7 +171,7 @@
       align-items: center;
       gap: 8px;
       padding: 8px 10px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--line);
       border-radius: 10px;
       background: #fff;
     }
@@ -179,7 +188,6 @@
       display: none;
     }
 
-    /* Dashboard */
     .dashboard {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -203,10 +211,16 @@
     .stat-card.runway { border-color: #22c55e; }
     .stat-card.balance { border-color: #1e293b; }
 
-    .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; }
+    .stat-label {
+      font-size: 0.7rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
     .stat-value { font-size: 1.35rem; font-weight: 900; margin-top: 6px; }
 
-    /* Tables & Sections */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -222,6 +236,7 @@
       align-items: center;
       gap: 8px;
     }
+
     h2::before {
       content: "";
       display: inline-block;
@@ -239,7 +254,8 @@
       overflow-x: auto;
     }
 
-    table { width: 100%; border-collapse: collapse; min-width: 1250px; }
+    table { width: 100%; border-collapse: collapse; min-width: 1280px; }
+
     caption {
       text-align: left;
       font-size: 0.8rem;
@@ -248,6 +264,7 @@
       margin-bottom: 8px;
       caption-side: top;
     }
+
     th {
       text-align: left;
       font-size: 0.65rem;
@@ -256,9 +273,28 @@
       border-bottom: 1px solid #f1f5f9;
       text-transform: uppercase;
     }
-    td { padding: 8px 10px; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f8fafc;
+      vertical-align: middle;
+    }
+
+    tr.invalid-row {
+      background: var(--invalid-bg);
+    }
+
+    tr.invalid-row td {
+      border-bottom-color: #fed7aa;
+    }
+
+    tr.invalid-row input,
+    tr.invalid-row select {
+      border-color: var(--invalid-border);
+    }
 
     .total-col { font-weight: 800; font-size: 0.9rem; }
+
     .days-badge {
       background: #f1f5f9;
       color: #64748b;
@@ -288,14 +324,23 @@
       width: 100%;
       max-width: 100%;
       height: 220px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid var(--line);
       border-radius: 12px;
       background: #fff;
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      align-items: center;
+      white-space: nowrap;
     }
 
     @media (max-width: 980px) {
       .controls-grid { grid-template-columns: 1fr; }
-      table { min-width: 1050px; }
+      table { min-width: 1100px; }
     }
   </style>
 </head>
@@ -313,6 +358,7 @@
 
   <div class="toolbar">
     <button class="btn btn-util" onclick="exportData()">💾 Export JSON</button>
+    <button class="btn btn-util" onclick="exportCSV()">📄 Export CSV</button>
     <button class="btn btn-util" onclick="document.getElementById('importFile').click()">📂 Import JSON</button>
     <button class="btn btn-util" onclick="clearData()">🗑️ Reset All</button>
     <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
@@ -320,7 +366,6 @@
   </div>
 
   <div class="controls-grid">
-    <!-- Simulation Window -->
     <div class="panel">
       <h3>Simulation Window</h3>
       <div class="field-row">
@@ -338,11 +383,10 @@
         </div>
       </div>
       <div class="mini" style="margin-top:10px;">
-        Burn rate and chart assume costs/funding are evenly distributed across active days.
+        Burn rate and chart assume costs and funding are evenly distributed across active days.
       </div>
     </div>
 
-    <!-- IDC / F&A -->
     <div class="panel">
       <h3>Indirect Costs (F&amp;A / IDC)</h3>
       <div class="field-row">
@@ -366,7 +410,6 @@
     </div>
   </div>
 
-  <!-- Dashboard -->
   <div class="dashboard">
     <div class="stat-card income">
       <div class="stat-label">Total Funding (In Window)</div>
@@ -409,7 +452,6 @@
     </div>
   </div>
 
-  <!-- INCOME -->
   <div class="section-header">
     <h2>1. Funding Sources</h2>
     <button class="btn btn-add-income" onclick="addRow('income')">+ Add Funding</button>
@@ -419,20 +461,19 @@
       <caption>Funding sources and their overlap-adjusted contribution within the simulation window.</caption>
       <thead>
       <tr>
-        <th width="30%">Description</th>
-        <th width="16%">Total Amount ($)</th>
-        <th width="14%">Start Date</th>
-        <th width="14%">End Date</th>
+        <th width="28%">Description</th>
+        <th width="15%">Total Amount ($)</th>
+        <th width="13%">Start Date</th>
+        <th width="13%">End Date</th>
         <th width="8%">Overlap Days</th>
-        <th width="13%">In-Window Funding</th>
-        <th width="5%"></th>
+        <th width="12%">In-Window Funding</th>
+        <th width="11%">Actions</th>
       </tr>
       </thead>
       <tbody id="incomeBody"></tbody>
     </table>
   </div>
 
-  <!-- PERSONNEL -->
   <div class="section-header">
     <h2>2. Personnel (Pro-Rated)</h2>
     <button class="btn btn-add-pers" onclick="addRow('personnel')">+ Add Member</button>
@@ -442,22 +483,21 @@
       <caption>Personnel costs pro-rated by overlap, effort, and fringe.</caption>
       <thead>
       <tr>
-        <th width="18%">Name / Role</th>
-        <th width="13%">Annual Salary ($)</th>
-        <th width="10%">Effort (%)</th>
-        <th width="10%">Fringe (%)</th>
-        <th width="14%">Start Date</th>
-        <th width="14%">End Date</th>
-        <th width="8%">Overlap Days</th>
-        <th width="8%">Cost</th>
-        <th width="5%"></th>
+        <th width="17%">Name / Role</th>
+        <th width="12%">Annual Salary ($)</th>
+        <th width="9%">Effort (%)</th>
+        <th width="9%">Fringe (%)</th>
+        <th width="13%">Start Date</th>
+        <th width="13%">End Date</th>
+        <th width="7%">Overlap Days</th>
+        <th width="9%">Cost</th>
+        <th width="11%">Actions</th>
       </tr>
       </thead>
       <tbody id="personnelBody"></tbody>
     </table>
   </div>
 
-  <!-- OTHER EXPENSES -->
   <div class="section-header">
     <h2>3. Other Expenses (Pro-Rated Operational Costs)</h2>
     <button class="btn btn-add-other" onclick="addRow('other')">+ Add Expense Item</button>
@@ -467,15 +507,15 @@
       <caption>Other operational expenses with optional MTDC inclusion.</caption>
       <thead>
       <tr>
-        <th width="22%">Item Description</th>
-        <th width="14%">Category</th>
+        <th width="21%">Item Description</th>
+        <th width="13%">Category</th>
         <th width="14%">Annual/Lump Rate ($)</th>
-        <th width="11%">Start Date</th>
-        <th width="11%">End Date</th>
-        <th width="8%">Overlap Days</th>
+        <th width="10%">Start Date</th>
+        <th width="10%">End Date</th>
+        <th width="7%">Overlap Days</th>
         <th width="8%">MTDC Included?</th>
-        <th width="9%">Total Cost</th>
-        <th width="3%"></th>
+        <th width="8%">Total Cost</th>
+        <th width="9%">Actions</th>
       </tr>
       </thead>
       <tbody id="otherBody"></tbody>
@@ -487,9 +527,19 @@
   let idCounter = 0;
   let suspendCalculate = false;
   let saveStatusTimer = null;
-  const STORAGE_KEY = 'ua_com_bmi_final_v5';
+  let lastChartState = { labels: [], values: [] };
 
-  // ---------- Date helpers ----------
+  const STORAGE_KEY = 'ua_com_bmi_final_v6';
+
+  function escapeHTML(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   function formatLocalISO(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -518,6 +568,11 @@
     return daysInclusive(s, e);
   }
 
+  function approxMonthsInWindow(simDays) {
+    const avg = 365.2425 / 12;
+    return simDays > 0 ? (simDays / avg) : 0;
+  }
+
   function getSimWindow() {
     const s = safeDate(document.getElementById('simStart').value);
     const e = safeDate(document.getElementById('simEnd').value);
@@ -525,21 +580,55 @@
   }
 
   function setSimWarn(show) {
-    const el = document.getElementById('simWarn');
-    el.style.display = show ? 'inline-block' : 'none';
+    document.getElementById('simWarn').style.display = show ? 'inline-block' : 'none';
   }
 
-  function approxMonthsInWindow(simDays) {
-    const avg = 365.2425 / 12;
-    return simDays > 0 ? (simDays / avg) : 0;
+  function formatCurrency(n) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(Number(n) || 0);
   }
 
-  // ---------- UI row builder ----------
+  function formatCompactCurrency(n) {
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+    if (abs >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+    return formatCurrency(n).replace('.00', '');
+  }
+
+  function parseNumber(value) {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function isValidRange(startStr, endStr) {
+    const s = safeDate(startStr);
+    const e = safeDate(endStr);
+    return !!(s && e && e >= s);
+  }
+
+  function markRowValidity(row, startSelector, endSelector) {
+    const startVal = row.querySelector(startSelector)?.value;
+    const endVal = row.querySelector(endSelector)?.value;
+    row.classList.toggle('invalid-row', !isValidRange(startVal, endVal));
+  }
+
+  function actionsCellHTML(type, rowId) {
+    return `
+      <div class="actions">
+        <button class="btn btn-dup" aria-label="Duplicate ${escapeHTML(type)} row" onclick="duplicateRow('${escapeHTML(type)}', ${rowId})">⧉</button>
+        <button class="btn btn-del" aria-label="Remove ${escapeHTML(type)} row" onclick="removeRow(${rowId})">✕</button>
+      </div>
+    `;
+  }
+
   function addRow(type, data = null) {
     idCounter++;
+    const rowId = idCounter;
     const tbody = document.getElementById(type + 'Body');
     const tr = document.createElement('tr');
-    tr.id = `row-${idCounter}`;
+    tr.id = `row-${rowId}`;
     tr.className = `${type}-row`;
 
     const today = isoToday();
@@ -547,25 +636,25 @@
 
     if (type === 'income') {
       tr.innerHTML = `
-        <td><input type="text" class="i-desc" value="${data?.desc ?? ''}" placeholder="Grant Name" oninput="calculate()"></td>
-        <td><input type="number" class="i-amt" value="${data?.amt ?? 100000}" min="0" step="0.01" oninput="calculate()"></td>
-        <td><input type="date" class="i-start" value="${data?.start ?? today}" oninput="calculate()"></td>
-        <td><input type="date" class="i-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><input type="text" class="i-desc" value="${escapeHTML(data?.desc ?? '')}" placeholder="Grant Name" oninput="calculate()"></td>
+        <td><input type="number" class="i-amt" value="${escapeHTML(data?.amt ?? 100000)}" min="0" step="0.01" oninput="calculate()"></td>
+        <td><input type="date" class="i-start" value="${escapeHTML(data?.start ?? today)}" oninput="calculate()"></td>
+        <td><input type="date" class="i-end" value="${escapeHTML(data?.end ?? endYear)}" oninput="calculate()"></td>
         <td><span class="days-badge i-days">0</span></td>
         <td class="total-col i-total">$0.00</td>
-        <td><button class="btn btn-del" aria-label="Remove funding row" onclick="removeRow(${idCounter})">✕</button></td>
+        <td>${actionsCellHTML('funding', rowId)}</td>
       `;
     } else if (type === 'personnel') {
       tr.innerHTML = `
-        <td><input type="text" class="p-name" value="${data?.name ?? ''}" placeholder="Role" oninput="calculate()"></td>
-        <td><input type="number" class="p-amt" value="${data?.amt ?? 70000}" min="0" step="0.01" oninput="calculate()"></td>
-        <td><input type="number" class="p-effort" value="${data?.effort ?? 100}" min="0" max="200" step="0.1" oninput="calculate()"></td>
-        <td><input type="number" class="p-fringe" value="${data?.fringe ?? 30}" min="0" max="200" step="0.1" oninput="calculate()"></td>
-        <td><input type="date" class="p-start" value="${data?.start ?? today}" oninput="calculate()"></td>
-        <td><input type="date" class="p-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><input type="text" class="p-name" value="${escapeHTML(data?.name ?? '')}" placeholder="Role" oninput="calculate()"></td>
+        <td><input type="number" class="p-amt" value="${escapeHTML(data?.amt ?? 70000)}" min="0" step="0.01" oninput="calculate()"></td>
+        <td><input type="number" class="p-effort" value="${escapeHTML(data?.effort ?? 100)}" min="0" max="200" step="0.1" oninput="calculate()"></td>
+        <td><input type="number" class="p-fringe" value="${escapeHTML(data?.fringe ?? 30)}" min="0" max="200" step="0.1" oninput="calculate()"></td>
+        <td><input type="date" class="p-start" value="${escapeHTML(data?.start ?? today)}" oninput="calculate()"></td>
+        <td><input type="date" class="p-end" value="${escapeHTML(data?.end ?? endYear)}" oninput="calculate()"></td>
         <td><span class="days-badge p-days">0</span></td>
         <td class="total-col p-total" style="color:var(--dai-coral)">$0.00</td>
-        <td><button class="btn btn-del" aria-label="Remove personnel row" onclick="removeRow(${idCounter})">✕</button></td>
+        <td>${actionsCellHTML('personnel', rowId)}</td>
       `;
     } else if (type === 'other') {
       const cat = data?.cat ?? 'Other';
@@ -573,9 +662,9 @@
       const mtdcIncluded = (data?.mtdcIncluded !== undefined) ? !!data.mtdcIncluded : defaultMtdc;
 
       tr.innerHTML = `
-        <td><input type="text" class="o-desc" value="${data?.desc ?? ''}" placeholder="e.g. Mouse Housing" oninput="calculate()"></td>
+        <td><input type="text" class="o-desc" value="${escapeHTML(data?.desc ?? '')}" placeholder="e.g. Mouse Housing" oninput="calculate()"></td>
         <td>
-          <select class="o-cat" onchange="syncOtherMtdcDefault(this); calculate()">
+          <select class="o-cat" onchange="calculate()">
             <option value="Animal Cost" ${cat === 'Animal Cost' ? 'selected' : ''}>Animal Cost</option>
             <option value="Equipment" ${cat === 'Equipment' ? 'selected' : ''}>Equipment</option>
             <option value="Supplies" ${cat === 'Supplies' ? 'selected' : ''}>Supplies</option>
@@ -584,29 +673,21 @@
             <option value="Other" ${cat === 'Other' ? 'selected' : ''}>Other</option>
           </select>
         </td>
-        <td><input type="number" class="o-amt" value="${data?.amt ?? 5000}" min="0" step="0.01" oninput="calculate()"></td>
-        <td><input type="date" class="o-start" value="${data?.start ?? today}" oninput="calculate()"></td>
-        <td><input type="date" class="o-end" value="${data?.end ?? endYear}" oninput="calculate()"></td>
+        <td><input type="number" class="o-amt" value="${escapeHTML(data?.amt ?? 5000)}" min="0" step="0.01" oninput="calculate()"></td>
+        <td><input type="date" class="o-start" value="${escapeHTML(data?.start ?? today)}" oninput="calculate()"></td>
+        <td><input type="date" class="o-end" value="${escapeHTML(data?.end ?? endYear)}" oninput="calculate()"></td>
         <td><span class="days-badge o-days">0</span></td>
         <td style="text-align:center;">
           <input type="checkbox" class="o-mtdc" ${mtdcIncluded ? 'checked' : ''} onchange="calculate()">
         </td>
         <td class="total-col o-total" style="color:#64748b">$0.00</td>
-        <td><button class="btn btn-del" aria-label="Remove other expense row" onclick="removeRow(${idCounter})">✕</button></td>
+        <td>${actionsCellHTML('other expense', rowId)}</td>
       `;
     }
 
     tbody.appendChild(tr);
 
-    if (!suspendCalculate) {
-      calculate();
-    }
-  }
-
-  function syncOtherMtdcDefault(selectEl) {
-    // Intentionally conservative:
-    // changing category does not overwrite the user's MTDC selection.
-    // Brand-new rows still receive defaults based on category.
+    if (!suspendCalculate) calculate();
   }
 
   function removeRow(id) {
@@ -615,143 +696,36 @@
     calculate();
   }
 
-  // ---------- Core computation ----------
-  function calculate() {
-    const { s: simStart, e: simEnd } = getSimWindow();
-    const simValid = !!(simStart && simEnd && simEnd >= simStart);
-    setSimWarn(!simValid);
+  function duplicateRow(type, id) {
+    const row = document.getElementById(`row-${id}`);
+    if (!row) return;
 
-    if (!simValid) {
-      setDashboardZeros();
-      autoSave();
-      drawChart([], []);
-      return;
+    if (type === 'income') {
+      addRow('income', {
+        desc: row.querySelector('.i-desc').value,
+        amt: row.querySelector('.i-amt').value,
+        start: row.querySelector('.i-start').value,
+        end: row.querySelector('.i-end').value
+      });
+    } else if (type === 'personnel') {
+      addRow('personnel', {
+        name: row.querySelector('.p-name').value,
+        amt: row.querySelector('.p-amt').value,
+        effort: row.querySelector('.p-effort').value,
+        fringe: row.querySelector('.p-fringe').value,
+        start: row.querySelector('.p-start').value,
+        end: row.querySelector('.p-end').value
+      });
+    } else if (type === 'other') {
+      addRow('other', {
+        desc: row.querySelector('.o-desc').value,
+        cat: row.querySelector('.o-cat').value,
+        amt: row.querySelector('.o-amt').value,
+        start: row.querySelector('.o-start').value,
+        end: row.querySelector('.o-end').value,
+        mtdcIncluded: !!row.querySelector('.o-mtdc').checked
+      });
     }
-
-    const simDays = daysInclusive(simStart, simEnd);
-    const simMonths = approxMonthsInWindow(simDays);
-    document.getElementById('dispMonths').innerText = `Window Months: ${simMonths.toFixed(2)}`;
-
-    let totalIncome = 0;
-    let totalPersonnel = 0;
-    let totalOther = 0;
-
-    const incomeDailySegments = [];
-    const costDailySegments = [];
-
-    // INCOME
-    document.querySelectorAll('.income-row').forEach(row => {
-      const amt = parseFloat(row.querySelector('.i-amt').value) || 0;
-      const gStart = safeDate(row.querySelector('.i-start').value);
-      const gEnd = safeDate(row.querySelector('.i-end').value);
-
-      let inWindow = 0;
-      let ovDays = 0;
-
-      if (gStart && gEnd && gEnd >= gStart) {
-        const grantDays = daysInclusive(gStart, gEnd);
-        ovDays = overlapDays(gStart, gEnd, simStart, simEnd);
-        inWindow = (grantDays > 0) ? amt * (ovDays / grantDays) : 0;
-
-        const daily = (grantDays > 0) ? (amt / grantDays) : 0;
-        incomeDailySegments.push({ start: gStart, end: gEnd, daily });
-      }
-
-      totalIncome += inWindow;
-      row.querySelector('.i-days').innerText = ovDays;
-      row.querySelector('.i-total').innerText = formatCurrency(inWindow);
-    });
-
-    // PERSONNEL
-    document.querySelectorAll('.personnel-row').forEach(row => {
-      const salary = parseFloat(row.querySelector('.p-amt').value) || 0;
-      const effortPct = (parseFloat(row.querySelector('.p-effort').value) || 0) / 100;
-      const fringe = (parseFloat(row.querySelector('.p-fringe').value) || 0) / 100;
-      const pStart = safeDate(row.querySelector('.p-start').value);
-      const pEnd = safeDate(row.querySelector('.p-end').value);
-
-      let cost = 0;
-      let ovDays = 0;
-
-      if (pStart && pEnd && pEnd >= pStart) {
-        ovDays = overlapDays(pStart, pEnd, simStart, simEnd);
-        const dailyBase = (salary / 365.25) * ovDays * effortPct;
-        cost = dailyBase * (1 + fringe);
-
-        const daily = (salary / 365.25) * effortPct * (1 + fringe);
-        costDailySegments.push({ start: pStart, end: pEnd, daily });
-      }
-
-      totalPersonnel += cost;
-      row.querySelector('.p-days').innerText = ovDays;
-      row.querySelector('.p-total').innerText = formatCurrency(cost);
-    });
-
-    // OTHER
-    let mtdcOther = 0;
-    document.querySelectorAll('.other-row').forEach(row => {
-      const amt = parseFloat(row.querySelector('.o-amt').value) || 0;
-      const oStart = safeDate(row.querySelector('.o-start').value);
-      const oEnd = safeDate(row.querySelector('.o-end').value);
-      const mtdcIncluded = !!row.querySelector('.o-mtdc')?.checked;
-
-      let cost = 0;
-      let ovDays = 0;
-
-      if (oStart && oEnd && oEnd >= oStart) {
-        ovDays = overlapDays(oStart, oEnd, simStart, simEnd);
-        cost = (amt / 365.25) * ovDays;
-
-        const daily = (amt / 365.25);
-        costDailySegments.push({ start: oStart, end: oEnd, daily });
-      }
-
-      totalOther += cost;
-      if (mtdcIncluded) mtdcOther += cost;
-
-      row.querySelector('.o-days').innerText = ovDays;
-      row.querySelector('.o-total').innerText = formatCurrency(cost);
-    });
-
-    const directCosts = totalPersonnel + totalOther;
-    const mtdcBase = totalPersonnel + mtdcOther;
-
-    const idcEnabled = !!document.getElementById('idcEnabled').checked;
-    const idcRate = (parseFloat(document.getElementById('idcRate').value) || 0) / 100;
-    const idc = idcEnabled ? (mtdcBase * idcRate) : 0;
-
-    if (idcEnabled && simDays > 0) {
-      const daily = idc / simDays;
-      costDailySegments.push({ start: simStart, end: simEnd, daily });
-    }
-
-    const totalCosts = directCosts + idc;
-    const balance = totalIncome - totalCosts;
-
-    const burnPerMonth = (simMonths > 0) ? (totalCosts / simMonths) : 0;
-    const runwayMonths = (burnPerMonth > 0) ? (balance / burnPerMonth) : Infinity;
-
-    document.getElementById('dispIncome').innerText = formatCurrency(totalIncome);
-    document.getElementById('dispPers').innerText = formatCurrency(totalPersonnel);
-    document.getElementById('dispOther').innerText = formatCurrency(totalOther);
-    document.getElementById('dispIDC').innerText = formatCurrency(idc);
-    document.getElementById('dispMTDC').innerText = `MTDC Base: ${formatCurrency(mtdcBase)}`;
-    document.getElementById('dispBurn').innerText = formatCurrency(burnPerMonth);
-
-    const runwayEl = document.getElementById('dispRunway');
-    if (!isFinite(runwayMonths)) runwayEl.innerText = '—';
-    else runwayEl.innerText = `${runwayMonths.toFixed(1)}`;
-
-    const balEl = document.getElementById('dispBal');
-    balEl.innerText = formatCurrency(balance);
-    balEl.style.color = balance < 0 ? 'var(--danger)' : '#1e293b';
-
-    const chartPoints = buildMonthlySeries(simStart, simEnd, incomeDailySegments, costDailySegments);
-    drawChart(chartPoints.labels, chartPoints.values);
-    document.getElementById('chartNote').innerText =
-      `Chart is monthly cumulative balance within the Simulation Window.`;
-
-    autoSave();
   }
 
   function setDashboardZeros() {
@@ -769,17 +743,9 @@
     document.getElementById('chartNote').innerText = '';
   }
 
-  // ---------- Charting ----------
   function monthStart(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
   function monthEnd(d) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
   function addMonths(date, n) { return new Date(date.getFullYear(), date.getMonth() + n, 1); }
-
-  function formatCompactCurrency(n) {
-    const abs = Math.abs(n);
-    if (abs >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-    if (abs >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
-    return formatCurrency(n).replace('.00', '');
-  }
 
   function buildMonthlySeries(simStart, simEnd, incomeSegs, costSegs) {
     const startM = monthStart(simStart);
@@ -799,10 +765,8 @@
     function segTotal(segs, a, b) {
       let sum = 0;
       for (const s of segs) {
-        const sStart = s.start;
-        const sEnd = s.end;
-        if (!(sStart && sEnd && sEnd >= sStart)) continue;
-        const ov = overlapDays(sStart, sEnd, a, b);
+        if (!(s.start && s.end && s.end >= s.start)) continue;
+        const ov = overlapDays(s.start, s.end, a, b);
         if (ov > 0) sum += ov * (s.daily || 0);
       }
       return sum;
@@ -815,6 +779,7 @@
 
       const sliceS = new Date(Math.max(mS.getTime(), simStart.getTime()));
       const sliceE = new Date(Math.min(mE.getTime(), simEnd.getTime()));
+
       if (sliceE >= sliceS) {
         const inc = segTotal(incomeSegs, sliceS, sliceE);
         const cost = segTotal(costSegs, sliceS, sliceE);
@@ -830,24 +795,48 @@
     return { labels, values };
   }
 
+  function resizeCanvasToDisplaySize(canvas) {
+    const ratio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(300, Math.floor(rect.width * ratio));
+    const height = Math.floor(220 * ratio);
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+      return true;
+    }
+    return false;
+  }
+
   function drawChart(labels, values) {
     const canvas = document.getElementById('balChart');
+    resizeCanvasToDisplaySize(canvas);
+
     const ctx = canvas.getContext('2d');
     const W = canvas.width;
     const H = canvas.height;
+    const scale = window.devicePixelRatio || 1;
 
     ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    const w = W / scale;
+    const h = H / scale;
 
     if (!labels || labels.length === 0) {
       ctx.font = '16px -apple-system, Inter, sans-serif';
       ctx.fillStyle = '#94a3b8';
       ctx.fillText('Set a valid Simulation Window to view the chart.', 20, 40);
+      ctx.restore();
+      lastChartState = { labels, values };
       return;
     }
 
-    const padL = 60, padR = 20, padT = 20, padB = 40;
-    const plotW = W - padL - padR;
-    const plotH = H - padT - padB;
+    const padL = 68, padR = 20, padT = 20, padB = 40;
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
 
     const minV = Math.min(...values, 0);
     const maxV = Math.max(...values, 0);
@@ -899,6 +888,10 @@
     for (let i = 0; i < labels.length; i += step) {
       ctx.fillText(labels[i], xFor(i) - 18, padT + plotH + 24);
     }
+    if ((labels.length - 1) % step !== 0) {
+      const i = labels.length - 1;
+      ctx.fillText(labels[i], xFor(i) - 18, padT + plotH + 24);
+    }
 
     const ticks = 4;
     for (let t = 0; t <= ticks; t++) {
@@ -911,12 +904,143 @@
       ctx.lineTo(padL + plotW, y);
       ctx.stroke();
     }
+
+    ctx.restore();
+    lastChartState = { labels, values };
   }
 
-  // ---------- Persistence ----------
+  function calculate() {
+    const { s: simStart, e: simEnd } = getSimWindow();
+    const simValid = !!(simStart && simEnd && simEnd >= simStart);
+    setSimWarn(!simValid);
+
+    document.querySelectorAll('.income-row').forEach(row => markRowValidity(row, '.i-start', '.i-end'));
+    document.querySelectorAll('.personnel-row').forEach(row => markRowValidity(row, '.p-start', '.p-end'));
+    document.querySelectorAll('.other-row').forEach(row => markRowValidity(row, '.o-start', '.o-end'));
+
+    if (!simValid) {
+      setDashboardZeros();
+      autoSave();
+      drawChart([], []);
+      return;
+    }
+
+    const simDays = daysInclusive(simStart, simEnd);
+    const simMonths = approxMonthsInWindow(simDays);
+    document.getElementById('dispMonths').innerText = `Window Months: ${simMonths.toFixed(2)}`;
+
+    let totalIncome = 0;
+    let totalPersonnel = 0;
+    let totalOther = 0;
+
+    const incomeDailySegments = [];
+    const costDailySegments = [];
+
+    document.querySelectorAll('.income-row').forEach(row => {
+      const amt = parseNumber(row.querySelector('.i-amt').value);
+      const gStart = safeDate(row.querySelector('.i-start').value);
+      const gEnd = safeDate(row.querySelector('.i-end').value);
+
+      let inWindow = 0;
+      let ovDays = 0;
+
+      if (gStart && gEnd && gEnd >= gStart) {
+        const grantDays = daysInclusive(gStart, gEnd);
+        ovDays = overlapDays(gStart, gEnd, simStart, simEnd);
+        inWindow = grantDays > 0 ? amt * (ovDays / grantDays) : 0;
+        incomeDailySegments.push({ start: gStart, end: gEnd, daily: grantDays > 0 ? amt / grantDays : 0 });
+      }
+
+      totalIncome += inWindow;
+      row.querySelector('.i-days').innerText = ovDays;
+      row.querySelector('.i-total').innerText = formatCurrency(inWindow);
+    });
+
+    document.querySelectorAll('.personnel-row').forEach(row => {
+      const salary = parseNumber(row.querySelector('.p-amt').value);
+      const effortPct = parseNumber(row.querySelector('.p-effort').value) / 100;
+      const fringe = parseNumber(row.querySelector('.p-fringe').value) / 100;
+      const pStart = safeDate(row.querySelector('.p-start').value);
+      const pEnd = safeDate(row.querySelector('.p-end').value);
+
+      let cost = 0;
+      let ovDays = 0;
+
+      if (pStart && pEnd && pEnd >= pStart) {
+        ovDays = overlapDays(pStart, pEnd, simStart, simEnd);
+        const dailyBase = (salary / 365.25) * ovDays * effortPct;
+        cost = dailyBase * (1 + fringe);
+        costDailySegments.push({ start: pStart, end: pEnd, daily: (salary / 365.25) * effortPct * (1 + fringe) });
+      }
+
+      totalPersonnel += cost;
+      row.querySelector('.p-days').innerText = ovDays;
+      row.querySelector('.p-total').innerText = formatCurrency(cost);
+    });
+
+    let mtdcOther = 0;
+    document.querySelectorAll('.other-row').forEach(row => {
+      const amt = parseNumber(row.querySelector('.o-amt').value);
+      const oStart = safeDate(row.querySelector('.o-start').value);
+      const oEnd = safeDate(row.querySelector('.o-end').value);
+      const mtdcIncluded = !!row.querySelector('.o-mtdc').checked;
+
+      let cost = 0;
+      let ovDays = 0;
+
+      if (oStart && oEnd && oEnd >= oStart) {
+        ovDays = overlapDays(oStart, oEnd, simStart, simEnd);
+        cost = (amt / 365.25) * ovDays;
+        costDailySegments.push({ start: oStart, end: oEnd, daily: amt / 365.25 });
+      }
+
+      totalOther += cost;
+      if (mtdcIncluded) mtdcOther += cost;
+
+      row.querySelector('.o-days').innerText = ovDays;
+      row.querySelector('.o-total').innerText = formatCurrency(cost);
+    });
+
+    const directCosts = totalPersonnel + totalOther;
+    const mtdcBase = totalPersonnel + mtdcOther;
+
+    const idcEnabled = !!document.getElementById('idcEnabled').checked;
+    const idcRate = parseNumber(document.getElementById('idcRate').value) / 100;
+    const idc = idcEnabled ? (mtdcBase * idcRate) : 0;
+
+    if (idcEnabled && simDays > 0) {
+      costDailySegments.push({ start: simStart, end: simEnd, daily: idc / simDays });
+    }
+
+    const totalCosts = directCosts + idc;
+    const balance = totalIncome - totalCosts;
+    const burnPerMonth = simMonths > 0 ? totalCosts / simMonths : 0;
+    const runwayMonths = burnPerMonth > 0 ? balance / burnPerMonth : Infinity;
+
+    document.getElementById('dispIncome').innerText = formatCurrency(totalIncome);
+    document.getElementById('dispPers').innerText = formatCurrency(totalPersonnel);
+    document.getElementById('dispOther').innerText = formatCurrency(totalOther);
+    document.getElementById('dispIDC').innerText = formatCurrency(idc);
+    document.getElementById('dispMTDC').innerText = `MTDC Base: ${formatCurrency(mtdcBase)}`;
+    document.getElementById('dispBurn').innerText = formatCurrency(burnPerMonth);
+    document.getElementById('chartNote').innerText = 'Chart is monthly cumulative balance within the Simulation Window.';
+
+    const runwayEl = document.getElementById('dispRunway');
+    runwayEl.innerText = Number.isFinite(runwayMonths) ? runwayMonths.toFixed(1) : '—';
+
+    const balEl = document.getElementById('dispBal');
+    balEl.innerText = formatCurrency(balance);
+    balEl.style.color = balance < 0 ? 'var(--danger)' : '#1e293b';
+
+    const chartPoints = buildMonthlySeries(simStart, simEnd, incomeDailySegments, costDailySegments);
+    drawChart(chartPoints.labels, chartPoints.values);
+
+    autoSave();
+  }
+
   function serializeData() {
     const data = {
-      version: 5,
+      version: 6,
       sim: {
         start: document.getElementById('simStart').value,
         end: document.getElementById('simEnd').value
@@ -957,11 +1081,30 @@
         amt: row.querySelector('.o-amt').value,
         start: row.querySelector('.o-start').value,
         end: row.querySelector('.o-end').value,
-        mtdcIncluded: !!row.querySelector('.o-mtdc')?.checked
+        mtdcIncluded: !!row.querySelector('.o-mtdc').checked
       });
     });
 
     return data;
+  }
+
+  function normalizeImportedData(parsed) {
+    const safeObj = (parsed && typeof parsed === 'object') ? parsed : {};
+
+    return {
+      version: Number(safeObj.version) || 6,
+      sim: {
+        start: typeof safeObj.sim?.start === 'string' ? safeObj.sim.start : '',
+        end: typeof safeObj.sim?.end === 'string' ? safeObj.sim.end : ''
+      },
+      idc: {
+        enabled: !!safeObj.idc?.enabled,
+        rate: safeObj.idc?.rate ?? '54'
+      },
+      income: Array.isArray(safeObj.income) ? safeObj.income : [],
+      personnel: Array.isArray(safeObj.personnel) ? safeObj.personnel : [],
+      other: Array.isArray(safeObj.other) ? safeObj.other : []
+    };
   }
 
   function autoSave() {
@@ -969,11 +1112,8 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeData()));
       const st = document.getElementById('save-status');
       st.style.display = 'inline';
-
       clearTimeout(saveStatusTimer);
-      saveStatusTimer = setTimeout(() => {
-        st.style.display = 'none';
-      }, 1500);
+      saveStatusTimer = setTimeout(() => { st.style.display = 'none'; }, 1500);
     } catch (e) {
       console.warn('Auto-save failed:', e);
     }
@@ -983,11 +1123,11 @@
     let raw = null;
 
     if (source) {
-      raw = source;
+      raw = normalizeImportedData(source);
     } else {
       try {
         const stored = localStorage.getItem(STORAGE_KEY);
-        raw = stored ? JSON.parse(stored) : null;
+        raw = stored ? normalizeImportedData(JSON.parse(stored)) : null;
       } catch (e) {
         console.warn('Stored data corrupted; starting fresh.', e);
         raw = null;
@@ -997,7 +1137,6 @@
     const y = new Date().getFullYear();
     document.getElementById('simStart').value = raw?.sim?.start || isoYearStart(y);
     document.getElementById('simEnd').value = raw?.sim?.end || isoYearEnd(y);
-
     document.getElementById('idcEnabled').checked = !!raw?.idc?.enabled;
     document.getElementById('idcRate').value = raw?.idc?.rate ?? '54';
 
@@ -1012,9 +1151,14 @@
       addRow('personnel');
       addRow('other');
     } else {
-      raw.income?.forEach(d => addRow('income', d));
-      raw.personnel?.forEach(d => addRow('personnel', d));
-      raw.other?.forEach(d => addRow('other', d));
+      if (raw.income.length === 0) addRow('income');
+      else raw.income.forEach(d => addRow('income', d));
+
+      if (raw.personnel.length === 0) addRow('personnel');
+      else raw.personnel.forEach(d => addRow('personnel', d));
+
+      if (raw.other.length === 0) addRow('other');
+      else raw.other.forEach(d => addRow('other', d));
     }
 
     suspendCalculate = false;
@@ -1022,11 +1166,35 @@
   }
 
   function exportData() {
-    const blob = new Blob([JSON.stringify(serializeData(), null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(serializeData(), null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `UA_COM_BMI_Budget_${isoToday()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function csvEscape(value) {
+    const str = String(value ?? '');
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+
+  function exportCSV() {
+    const data = serializeData();
+    const rows = [];
+
+    rows.push(['Section','Description','Category/Role','Amount','Effort','Fringe','Start Date','End Date','MTDC Included']);
+    data.income.forEach(r => rows.push(['Funding', r.desc, '', r.amt, '', '', r.start, r.end, '']));
+    data.personnel.forEach(r => rows.push(['Personnel', r.name, r.name, r.amt, r.effort, r.fringe, r.start, r.end, '']));
+    data.other.forEach(r => rows.push(['Other Expense', r.desc, r.cat, r.amt, '', '', r.start, r.end, r.mtdcIncluded ? 'Yes' : 'No']));
+
+    const csv = rows.map(row => row.map(csvEscape).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `UA_COM_BMI_Budget_${isoToday()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -1050,20 +1218,14 @@
   }
 
   function clearData() {
-    if (confirm("Erase all simulator data?")) {
+    if (confirm('Erase all simulator data?')) {
       localStorage.removeItem(STORAGE_KEY);
       loadData(null);
     }
   }
 
-  function formatCurrency(n) {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(n);
-  }
-
   window.addEventListener('DOMContentLoaded', loadData);
+  window.addEventListener('resize', () => drawChart(lastChartState.labels, lastChartState.values));
 </script>
 </body>
 </html>
